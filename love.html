@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Наша годовщина ❤️</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Comfortaa', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: linear-gradient(160deg, #fff8fb 0%, #ffe9f1 45%, #ffdfea 100%);
+    min-height: 100vh; color: #6b4550;
+    padding: 18px 14px 60px; position: relative; overflow-x: hidden;
+  }
+  .float-hearts { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 0; }
+  .float-hearts span {
+    position: absolute; font-size: 16px; opacity: 0;
+    animation: floatUp 9s linear infinite;
+    filter: drop-shadow(0 2px 4px rgba(255,143,171,0.35));
+  }
+  @keyframes floatUp {
+    0%   { transform: translateY(20vh) scale(0.6); opacity: 0; }
+    15%  { opacity: 0.75; } 85% { opacity: 0.6; }
+    100% { transform: translateY(-115vh) scale(1.1) rotate(20deg); opacity: 0; }
+  }
+  .container { position: relative; z-index: 1; max-width: 500px; margin: 0 auto; }
+  .header { text-align: center; margin-bottom: 18px; }
+  .header h1 {
+    font-size: 26px; font-weight: 700; margin: 0 0 6px;
+    background: linear-gradient(135deg, #ff8fab, #ff6b95, #ffb6c1);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; letter-spacing: 0.3px;
+  }
+  .header p { font-size: 13px; color: #b58a95; margin: 0; font-weight: 600; }
+  .card {
+    background: rgba(255,255,255,0.78); backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,214,226,0.9); border-radius: 22px;
+    padding: 18px; margin-bottom: 16px;
+    box-shadow: 0 8px 24px rgba(255,143,171,0.13);
+  }
+  .card h2 {
+    font-size: 15px; font-weight: 700; margin: 0 0 12px; color: #e8709a;
+    display: flex; align-items: center; gap: 7px;
+  }
+  .timer-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
+  .time-box {
+    background: linear-gradient(160deg, #ffffff 0%, #fff0f5 100%);
+    border: 1px solid #ffe0eb; border-radius: 16px;
+    padding: 12px 4px 10px; text-align: center;
+    box-shadow: inset 0 1px 0 #fff, 0 3px 10px rgba(255,143,171,0.10);
+  }
+  .time-box .num {
+    font-size: 22px; font-weight: 700; color: #ff6b95;
+    line-height: 1.05; font-variant-numeric: tabular-nums; display: block;
+  }
+  .time-box .lbl { font-size: 10.5px; color: #b58a95; margin-top: 3px; font-weight: 600; }
+  textarea#message {
+    width: 100%; min-height: 110px; border: none; background: transparent;
+    font-family: inherit; font-size: 14px; line-height: 1.6;
+    color: #6b4550; resize: vertical; outline: none; padding: 4px 2px;
+  }
+  textarea#message::placeholder { color: #d8b6c1; }
+  .hint { font-size: 10.5px; color: #caa6b2; text-align: right; margin-top: 4px; font-weight: 600; }
+  .gallery-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .gallery-header h2 { margin: 0; }
+  .add-btn {
+    background: linear-gradient(135deg, #ffb0c5, #ff8fab); color: white;
+    border: none; border-radius: 12px; padding: 8px 14px;
+    font-size: 12px; font-weight: 700; font-family: inherit; cursor: pointer;
+    box-shadow: 0 4px 12px rgba(255,143,171,0.4);
+    display: inline-flex; align-items: center; gap: 5px; transition: transform 0.15s ease;
+  }
+  .add-btn:active { transform: scale(0.95); }
+  .add-btn:disabled { opacity: 0.6; }
+  .gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+  .gallery-item {
+    position: relative; aspect-ratio: 1; border-radius: 13px;
+    overflow: hidden; background: #ffe4ec; cursor: pointer;
+    box-shadow: 0 2px 8px rgba(255,143,171,0.15);
+  }
+  .gallery-item img, .gallery-item video {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+  }
+  .gallery-item .delete {
+    position: absolute; top: 4px; right: 4px; width: 22px; height: 22px;
+    border-radius: 50%; background: rgba(255,255,255,0.94);
+    color: #ff6b95; border: none; font-size: 14px; font-weight: 700;
+    line-height: 1; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; padding: 0; box-shadow: 0 2px 6px rgba(255,143,171,0.3); z-index: 2;
+  }
+  .video-badge {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    background: rgba(255,143,171,0.15); color: white; font-size: 22px;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.5); pointer-events: none;
+  }
+  .empty-gallery {
+    grid-column: 1 / -1; text-align: center; padding: 26px 10px;
+    color: #d3aab7; font-size: 13px; border: 2px dashed #ffd6e2;
+    border-radius: 14px; font-weight: 600;
+  }
+  .lightbox {
+    position: fixed; inset: 0; background: rgba(60,30,40,0.88);
+    backdrop-filter: blur(6px); display: none; align-items: center;
+    justify-content: center; z-index: 1000; padding: 20px;
+  }
+  .lightbox.open { display: flex; }
+  .lightbox-content img, .lightbox-content video {
+    max-width: 92vw; max-height: 82vh; border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .lightbox-close {
+    position: absolute; top: 16px; right: 16px; width: 40px; height: 40px;
+    border-radius: 50%; background: rgba(255,255,255,0.9); border: none;
+    color: #ff6b95; font-size: 22px; font-weight: 700; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  }
+  .footer { text-align: center; font-size: 11px; color: #c9a3b0; margin-top: 22px; font-weight: 600; }
+  .logout {
+    background: none; border: none; color: #c9a3b0;
+    font-family: inherit; font-size: 11px; font-weight: 600;
+    cursor: pointer; margin-top: 8px; text-decoration: underline;
+  }
+
+  /* ===== Экран входа ===== */
+  .gate {
+    position: fixed; inset: 0; z-index: 500;
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+    background: linear-gradient(160deg, #fff8fb 0%, #ffe9f1 45%, #ffdfea 100%);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+  }
+  .gate.hidden {
+    opacity: 0; transform: scale(1.05); pointer-events: none;
+  }
+  .gate-card {
+    background: rgba(255,255,255,0.85);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255,214,226,0.9);
+    border-radius: 26px;
+    padding: 36px 26px 28px;
+    max-width: 340px; width: 100%; text-align: center;
+    box-shadow: 0 20px 50px rgba(255,143,171,0.25);
+    animation: gateIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  @keyframes gateIn {
+    from { opacity: 0; transform: translateY(20px) scale(0.95); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .gate-heart {
+    font-size: 52px; line-height: 1; margin-bottom: 12px;
+    display: inline-block; animation: heartBeat 1.6s ease-in-out infinite;
+    filter: drop-shadow(0 6px 14px rgba(255,107,149,0.4));
+  }
+  @keyframes heartBeat {
+    0%, 100% { transform: scale(1); }
+    20%, 60% { transform: scale(1.15); }
+    40% { transform: scale(0.95); }
+  }
+  .gate-title {
+    font-size: 19px; font-weight: 700; margin: 0 0 6px;
+    background: linear-gradient(135deg, #ff8fab, #ff6b95, #ffb6c1);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .gate-sub { font-size: 12px; color: #b58a95; margin: 0 0 22px; font-weight: 600; }
+  .gate-input {
+    width: 100%; padding: 14px 16px; font-family: inherit;
+    font-size: 15px; color: #6b4550;
+    background: #fff6fa; border: 1.5px solid #ffd6e2;
+    border-radius: 14px; outline: none; text-align: center;
+    letter-spacing: 1px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .gate-input:focus {
+    border-color: #ff8fab;
+    box-shadow: 0 0 0 4px rgba(255,143,171,0.15);
+  }
+  .gate-input::placeholder { color: #d8b6c1; letter-spacing: 0.5px; }
+  .gate-btn {
+    width: 100%; margin-top: 14px; padding: 14px;
+    border: none; border-radius: 14px;
+    background: linear-gradient(135deg, #ffb0c5, #ff8fab);
+    color: white; font-family: inherit; font-size: 14px;
+    font-weight: 700; cursor: pointer; letter-spacing: 0.5px;
+    box-shadow: 0 8px 20px rgba(255,143,171,0.45);
+    transition: transform 0.15s ease, opacity 0.2s ease;
+  }
+  .gate-btn:active { transform: scale(0.97); }
+  .gate-btn:disabled { opacity: 0.7; }
+  .gate-error {
+    min-height: 18px; margin-top: 12px;
+    font-size: 11.5px; color: #ff4d7d; font-weight: 600;
+    transition: opacity 0.2s ease;
+  }
+  .gate-error.shake { animation: shake 0.4s ease; }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+  }
+
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: rgba(255,107,149,0.95); color: white; padding: 10px 20px;
+    border-radius: 14px; font-size: 12px; font-weight: 700;
+    box-shadow: 0 8px 24px rgba(255,107,149,0.4);
+    opacity: 0; transition: all 0.3s ease; z-index: 2000; pointer-events: none;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+</style>
+</head>
+<body>
+
+<div class="float-hearts" id="hearts"></div>
+
+<!-- ===== ЭКРАН ВХОДА ===== -->
+<div class="gate" id="gate">
+  <div class="gate-card">
+    <div class="gate-heart">❤️</div>
+    <h1 class="gate-title">Это только для нас</h1>
+    <p class="gate-sub">Введи наш секретный пароль</p>
+    <input type="password" id="gateInput" class="gate-input"
+           placeholder="• • • • • •" autocomplete="current-password">
+    <button id="gateBtn" class="gate-btn">Войти ♡</button>
+    <div class="gate-error" id="gateError"></div>
+  </div>
+</div>
+
+<!-- ===== ОСНОВНОЙ КОНТЕНТ ===== -->
+<div class="container" id="app" style="display:none">
+  <div class="header">
+    <h1>❤️ 1 год вместе ❤️</h1>
+    <p>27 сентября — наша дата</p>
+  </div>
+
+  <div class="card">
+    <h2 id="timerTitle">⏳ Мы вместе уже</h2>
+    <div class="timer-grid">
+      <div class="time-box"><span class="num" id="t-years">0</span><div class="lbl" id="l-years">лет</div></div>
+      <div class="time-box"><span class="num" id="t-months">0</span><div class="lbl" id="l-months">месяцев</div></div>
+      <div class="time-box"><span class="num" id="t-days">0</span><div class="lbl" id="l-days">дней</div></div>
+      <div class="time-box"><span class="num" id="t-hours">0</span><div class="lbl" id="l-hours">часов</div></div>
+      <div class="time-box"><span class="num" id="t-minutes">0</span><div class="lbl" id="l-minutes">минут</div></div>
+      <div class="time-box"><span class="num" id="t-seconds">0</span><div class="lbl" id="l-seconds">секунд</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>💌 Наше послание</h2>
+    <textarea id="message" placeholder="Напиши здесь своё поздравление..."></textarea>
+    <div class="hint" id="msgHint">Сохраняется автоматически ♡</div>
+  </div>
+
+  <div class="card">
+    <div class="gallery-header">
+      <h2>📸 Наши моменты</h2>
+      <button class="add-btn" id="addBtn">+ Добавить</button>
+      <input type="file" id="fileInput" accept="image/*,video/*" multiple hidden>
+    </div>
+    <div class="gallery" id="gallery"></div>
+  </div>
+
+  <div class="footer">
+    Сделано с любовью ♡
+    <br>
+    <button class="logout" id="logoutBtn">Выйти</button>
+  </div>
+</div>
+
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" id="lightboxClose">×</button>
+  <div class="lightbox-content" id="lightboxContent"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================
+   👇 НАСТРОЙКИ
+   ========================================================= */
+const SUPABASE_URL = 'https://dblumghigbdeolfooyai.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_ZOAUc-HfbqMGN-0_1imWeg_RtZO-Yh8';
+
+// Email пользователя, которого ты создал в Supabase
+// (девушке его знать не нужно — она вводит только пароль)
+const SHARED_EMAIL = 'our-love@couple.app';
+/* ========================================================= */
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const BUCKET = 'media';
+
+/* ============ Telegram ============ */
+const tg = window.Telegram?.WebApp;
+if (tg) {
+  tg.ready(); tg.expand();
+  try {
+    tg.setHeaderColor('#ffe9f1');
+    tg.setBackgroundColor('#fff8fb');
+    tg.enableClosingConfirmation?.();
+  } catch(e) {}
+}
+
+/* ============ Утилиты ============ */
+function toast(text) {
+  const el = document.getElementById('toast');
+  el.textContent = text;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 2200);
+}
+function haptic(type='light') {
+  try { tg?.HapticFeedback?.impactOccurred(type); } catch(e) {}
+}
+
+/* ============ Плавающие сердечки ============ */
+(function initHearts() {
+  const container = document.getElementById('hearts');
+  const emojis = ['💕','💖','🌸','♡','💗','✨'];
+  for (let i = 0; i < 9; i++) {
+    const s = document.createElement('span');
+    s.textContent = emojis[i % emojis.length];
+    s.style.left = Math.random() * 100 + '%';
+    s.style.animationDelay = (Math.random() * 9) + 's';
+    s.style.animationDuration = (7 + Math.random() * 6) + 's';
+    s.style.fontSize = (12 + Math.random() * 12) + 'px';
+    container.appendChild(s);
+  }
+})();
+
+/* ============ Экран входа ============ */
+const gate = document.getElementById('gate');
+const gateInput = document.getElementById('gateInput');
+const gateBtn = document.getElementById('gateBtn');
+const gateError = document.getElementById('gateError');
+const app = document.getElementById('app');
+
+function showError(text) {
+  gateError.textContent = text;
+  gateError.classList.remove('shake');
+  void gateError.offsetWidth;
+  gateError.classList.add('shake');
+  haptic('heavy');
+}
+
+async function tryLogin() {
+  const password = gateInput.value.trim();
+  if (!password) { showError('Введи пароль ♡'); return; }
+
+  gateBtn.disabled = true;
+  gateBtn.textContent = 'Проверяю...';
+  gateError.textContent = '';
+
+  const { error } = await sb.auth.signInWithPassword({
+    email: SHARED_EMAIL,
+    password: password
+  });
+
+  gateBtn.disabled = false;
+  gateBtn.textContent = 'Войти ♡';
+
+  if (error) {
+    console.error(error);
+    if (error.message.includes('Invalid login')) {
+      showError('Неверный пароль :(');
+    } else {
+      showError('Ошибка: ' + error.message);
+    }
+    return;
+  }
+
+  gateInput.value = '';
+  haptic('medium');
+  openApp();
+}
+
+gateBtn.addEventListener('click', tryLogin);
+gateInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') tryLogin();
+});
+
+function openApp() {
+  gate.classList.add('hidden');
+  setTimeout(() => {
+    gate.style.display = 'none';
+    app.style.display = 'block';
+    startApp();
+  }, 400);
+}
+
+/* ============ Выход ============ */
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  if (!confirm('Выйти из приложения?')) return;
+  await sb.auth.signOut();
+  location.reload();
+});
+
+/* ============ Таймер ============ */
+const START_DATE = new Date('2025-09-27T00:00:00');
+function plural(n, forms) {
+  const n10 = n % 10, n100 = n % 100;
+  if (n10 === 1 && n100 !== 11) return forms[0];
+  if (n10 >= 2 && n10 <= 4 && (n100 < 10 || n100 >= 20)) return forms[1];
+  return forms[2];
+}
+function getDiff(from, to) {
+  let years = to.getFullYear() - from.getFullYear();
+  let months = to.getMonth() - from.getMonth();
+  let days = to.getDate() - from.getDate();
+  let hours = to.getHours() - from.getHours();
+  let minutes = to.getMinutes() - from.getMinutes();
+  let seconds = to.getSeconds() - from.getSeconds();
+  if (seconds < 0) { seconds += 60; minutes--; }
+  if (minutes < 0) { minutes += 60; hours--; }
+  if (hours < 0) { hours += 24; days--; }
+  if (days < 0) {
+    const pm = new Date(to.getFullYear(), to.getMonth(), 0).getDate();
+    days += pm; months--;
+  }
+  if (months < 0) { months += 12; years--; }
+  return { years, months, days, hours, minutes, seconds };
+}
+function updateTimer() {
+  const now = new Date();
+  const isPast = now >= START_DATE;
+  const d = getDiff(isPast ? START_DATE : now, isPast ? now : START_DATE);
+  document.getElementById('t-years').textContent = d.years;
+  document.getElementById('t-months').textContent = d.months;
+  document.getElementById('t-days').textContent = d.days;
+  document.getElementById('t-hours').textContent = String(d.hours).padStart(2,'0');
+  document.getElementById('t-minutes').textContent = String(d.minutes).padStart(2,'0');
+  document.getElementById('t-seconds').textContent = String(d.seconds).padStart(2,'0');
+  document.getElementById('l-years').textContent = plural(d.years,['год','года','лет']);
+  document.getElementById('l-months').textContent = plural(d.months,['месяц','месяца','месяцев']);
+  document.getElementById('l-days').textContent = plural(d.days,['день','дня','дней']);
+  document.getElementById('l-hours').textContent = plural(d.hours,['час','часа','часов']);
+  document.getElementById('l-minutes').textContent = plural(d.minutes,['минута','минуты','минут']);
+  document.getElementById('l-seconds').textContent = plural(d.seconds,['секунда','секунды','секунд']);
+  document.getElementById('timerTitle').textContent = isPast ? '⏳ Мы вместе уже' : '💞 До нашей даты';
+}
+
+/* ============ Сообщение ============ */
+const msgEl = document.getElementById('message');
+const msgHint = document.getElementById('msgHint');
+let msgSaveTimer = null;
+
+async function loadMessage() {
+  const { data, error } = await sb.from('messages').select('text').eq('id', 1).single();
+  if (error) { console.error(error); msgHint.textContent = 'Ошибка загрузки :('; return; }
+  if (document.activeElement !== msgEl) {
+    msgEl.value = data?.text || '';
+  }
+}
+async function saveMessage(text) {
+  msgHint.textContent = 'Сохраняю...';
+  const { error } = await sb.from('messages')
+    .upsert({ id: 1, text, updated_at: new Date().toISOString() });
+  if (error) { msgHint.textContent = 'Ошибка :('; console.error(error); return; }
+  msgHint.textContent = 'Сохранено ♡';
+  clearTimeout(msgHint._t);
+  msgHint._t = setTimeout(() => msgHint.textContent = 'Сохраняется автоматически ♡', 1500);
+}
+msgEl.addEventListener('input', () => {
+  clearTimeout(msgSaveTimer);
+  msgSaveTimer = setTimeout(() => saveMessage(msgEl.value), 700);
+});
+
+/* ============ Галерея ============ */
+const galleryEl = document.getElementById('gallery');
+const fileInput = document.getElementById('fileInput');
+const addBtn = document.getElementById('addBtn');
+
+addBtn.addEventListener('click', () => fileInput.click());
+
+fileInput.addEventListener('change', async (e) => {
+  const files = Array.from(e.target.files || []);
+  if (!files.length) return;
+  addBtn.disabled = true;
+  const originalText = addBtn.textContent;
+  let success = 0;
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    addBtn.textContent = `↑ ${i+1}/${files.length}`;
+    try { await uploadMedia(file); success++; }
+    catch (err) { console.error(err); toast('Ошибка загрузки :('); }
+  }
+  addBtn.textContent = originalText;
+  addBtn.disabled = false;
+  fileInput.value = '';
+  if (success) { haptic('medium'); toast(`Загружено: ${success} ♡`); }
+  await loadMedia();
+});
+
+async function uploadMedia(file) {
+  const isVideo = file.type.startsWith('video');
+  const ext = (file.name.split('.').pop() || (isVideo ? 'mp4' : 'jpg')).toLowerCase();
+  const path = `${Date.now()}-${Math.random().toString(36).slice(2,9)}.${ext}`;
+  const { error: upErr } = await sb.storage.from(BUCKET).upload(path, file, {
+    contentType: file.type, cacheControl: '31536000', upsert: false
+  });
+  if (upErr) throw upErr;
+  const { data: urlData } = sb.storage.from(BUCKET).getPublicUrl(path);
+  const { error: dbErr } = await sb.from('media').insert({
+    type: isVideo ? 'video' : 'image',
+    url: urlData.publicUrl,
+    storage_path: path
+  });
+  if (dbErr) throw dbErr;
+}
+
+async function loadMedia() {
+  const { data, error } = await sb.from('media')
+    .select('*').order('created_at', { ascending: false });
+  if (error) { console.error(error); return; }
+  renderGallery(data || []);
+}
+
+function renderGallery(items) {
+  galleryEl.innerHTML = '';
+  if (!items.length) {
+    const empty = document.createElement('div');
+    empty.className = 'empty-gallery';
+    empty.textContent = 'Здесь появятся наши фото и видео ♡';
+    galleryEl.appendChild(empty);
+    return;
+  }
+  for (const item of items) {
+    const div = document.createElement('div');
+    div.className = 'gallery-item';
+    if (item.type === 'image') {
+      const img = document.createElement('img');
+      img.src = item.url; img.alt = ''; img.loading = 'lazy';
+      div.appendChild(img);
+    } else {
+      const video = document.createElement('video');
+      video.src = item.url; video.muted = true;
+      video.playsInline = true; video.preload = 'metadata';
+      div.appendChild(video);
+      const badge = document.createElement('div');
+      badge.className = 'video-badge';
+      badge.textContent = '▶';
+      div.appendChild(badge);
+    }
+    const del = document.createElement('button');
+    del.className = 'delete';
+    del.textContent = '×';
+    del.addEventListener('click', async (ev) => {
+      ev.stopPropagation();
+      if (!confirm('Удалить этот файл?')) return;
+      try {
+        await sb.storage.from(BUCKET).remove([item.storage_path]);
+        await sb.from('media').delete().eq('id', item.id);
+        haptic('soft');
+        await loadMedia();
+      } catch(e) { console.error(e); toast('Не удалось удалить'); }
+    });
+    div.appendChild(del);
+    div.addEventListener('click', () => openLightbox(item));
+    galleryEl.appendChild(div);
+  }
+}
+
+/* ============ Лайтбокс ============ */
+const lightbox = document.getElementById('lightbox');
+const lightboxContent = document.getElementById('lightboxContent');
+function openLightbox(item) {
+  lightboxContent.innerHTML = '';
+  if (item.type === 'image') {
+    const img = document.createElement('img');
+    img.src = item.url;
+    lightboxContent.appendChild(img);
+  } else {
+    const video = document.createElement('video');
+    video.src = item.url; video.controls = true;
+    video.autoplay = true; video.playsInline = true;
+    lightboxContent.appendChild(video);
+  }
+  lightbox.classList.add('open');
+}
+function closeLightbox() {
+  lightbox.classList.remove('open');
+  lightboxContent.innerHTML = '';
+}
+document.getElementById('lightboxClose').addEventListener('click', closeLightbox);
+lightbox.addEventListener('click', (e) => { if (e.target === lightbox) closeLightbox(); });
+
+/* ============ Запуск приложения ============ */
+let appStarted = false;
+function startApp() {
+  if (appStarted) return;
+  appStarted = true;
+  updateTimer();
+  setInterval(updateTimer, 1000);
+  loadMessage();
+  loadMedia();
+
+  sb.channel('messages-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, payload => {
+      if (document.activeElement === msgEl) return;
+      const t = payload.new?.text || '';
+      if (msgEl.value !== t) msgEl.value = t;
+    })
+    .subscribe();
+
+  sb.channel('media-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'media' }, () => {
+      loadMedia();
+    })
+    .subscribe();
+
+  sb.auth.onAuthStateChange((event) => {
+    if (event === 'SIGNED_OUT') {
+      gate.style.display = 'flex';
+      gate.classList.remove('hidden');
+      app.style.display = 'none';
+      appStarted = false;
+    }
+  });
+}
+
+/* ============ Проверка сессии при запуске ============ */
+(async function init() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    gate.style.display = 'none';
+    app.style.display = 'block';
+    startApp();
+  } else {
+    setTimeout(() => gateInput.focus(), 300);
+  }
+})();
+</script>
+</body>
+</html>
